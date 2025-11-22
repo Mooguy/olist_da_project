@@ -1,7 +1,7 @@
 # Ignore the entire data folder (do not commit CSV data)
 data_csv/
 
-# Optional helpful ignores
+# Helpful ignores
 __pycache__/
 *.pyc
 .env
