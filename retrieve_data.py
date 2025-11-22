@@ -12,7 +12,7 @@ if os.path.exists(cache_path):
 path = kagglehub.dataset_download("olistbr/brazilian-ecommerce")
 print("Path to dataset files:", path)
 
-# List downloaded files
+# List downloaded filesa
 files = os.listdir(path)
 print(f"Downloaded {len(files)} files: {files}")
 
