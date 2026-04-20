@@ -1,0 +1,171 @@
+CREATE TABLE customers (
+    customer_id CHAR(32),     
+    customer_unique_id SERIAL PRIMARY KEY,     
+    customer_zip_code_prefix INTEGER,      
+    customer_city VARCHAR(100), 
+    customer_state CHAR(2)       
+);
+
+CREATE TABLE orders_review(
+	review_id SERIAL PRIMARY KEY,
+	order_id VARCHAR(32),
+	rating INTEGER,
+	review_title VARCHAR(200),
+	review_message TEXT
+);
+
+ALTER TABLE orders_review
+RENAME TO order_reviews;
+
+CREATE TABLE order_payments(
+	order_id VARCHAR(32),
+	payment_sequential INTEGER,
+	payment_type VARCHAR(20),
+	payment_int INTEGER,
+	payment_value NUMERIC(8, 2)
+);
+
+
+ALTER TABLE order_payments
+ALTER COLUMN order_id TYPE CHAR;
+CREATE TABLE orders (
+    order_id CHAR(32) PRIMARY KEY,
+    customer_id CHAR(32),
+    status VARCHAR(30),
+    purchase_ts TIMESTAMP,
+    approved_ts TIMESTAMP,
+    shipped_ts TIMESTAMP,
+    delivered_ts TIMESTAMP,
+    estimated_ts TIMESTAMP
+);
+
+ALTER TABLE order_reviews
+ADD CONSTRAINT fk_order_reviews_order
+FOREIGN KEY (order_id)
+REFERENCES orders(order_id);
+
+ALTER TABLE order_reviews
+ADD COLUMN review_date TIMESTAMP,
+ADD COLUMN review_answer_date TIMESTAMP;
+
+ALTER TABLE order_reviews
+DROP CONSTRAINT orders_review_pkey;
+
+
+\! cls
+
+
+\copy orders FROM 'C:\Users\guyil\Desktop\data_analysis\data_csv\olist_orders_dataset.csv' WITH (FORMAT CSV
+, HEADER true, DELIMITER ',', ENCODING 'UTF8');
+
+\copy order_reviews FROM 'C:\Users\guyil\Desktop\data_analysis\data_csv\olist_order_reviews_dataset.csv' WITH (FORMAT CSV
+, HEADER true, DELIMITER ',', ENCODING 'UTF8');
+
+\copy order_payments FROM 'C:\Users\guyil\Desktop\data_analysis\data_csv\olist_order_payments_dataset.csv' WITH (FORMAT CSV, HEADER true, DELIMITER ',', ENCODING 'UTF8');
+
+CREATE TABLE order_items(
+	order_id VARCHAR(32),
+	order_item INTEGER,
+	product_id VARCHAR(32),
+	seller_id VARCHAR(32),
+	shipping_limit_date TIMESTAMP,
+	price NUMERIC(7,2),
+	freight_value NUMERIC(5, 2)
+);
+
+ALTER TABLE order_items
+RENAME COLUMN order_item TO item_id
+
+ALTER TABLE order_items
+ADD CONSTRAINT fk_order_items_orders
+FOREIGN KEY (order_id)
+REFERENCES orders(order_id);
+
+
+\copy order_items FROM 'C:\Users\guyil\Desktop\data_analysis\data_csv\olist_order_items_dataset.csv' WITH (FORMAT CSV, HEADER true, DELIMITER ',', ENCODING 'UTF8');
+
+CREATE TABLE products(
+	prodcut_id CHAR(32) PRIMARY KEY,
+	product_category VARCHAR(32),
+	name_length INTEGER,
+	description_length INTEGER,
+	photos_quantity INTEGER,
+	weight_g INTEGER,
+	length_cm INTEGER,
+	height_cm INTEGER,
+	width_cm INTEGER
+);
+
+
+\copy products FROM 'C:\Users\guyil\Desktop\data_analysis\data_csv\olist_products_dataset.csv' WITH (FORMAT CSV, HEADER true, DELIMITER ',', ENCODING 'UTF8');
+
+ALTER TABLE order_items
+ADD CONSTRAINT fk_order_items_products
+FOREIGN KEY (product_id)
+REFERENCES products(product_id);
+
+CREATE TABLE sellers(
+	seller_id CHAR(32) PRIMARY KEY,
+	seller_zip_prefix INTEGER,
+	city VARCHAR(32),
+	celler_state CHAR(2)
+)
+
+ALTER TABLE sellers
+ALTER COLUMN city TYPE VARCHAR(75)
+
+\copy sellers FROM 'C:\Users\guyil\Desktop\data_analysis\data_csv\olist_sellers_dataset.csv' WITH (FORMAT CSV, HEADER true, DELIMITER ',', ENCODING 'UTF8');
+
+ALTER TABLE order_items
+ADD CONSTRAINT fk_order_items_sellers
+FOREIGN KEY (seller_id)
+REFERENCES sellers(seller_id);
+
+ALTER TABLE sellers
+RENAME COLUMN celler_state TO seller_state;
+
+CREATE TABLE category_names_english(
+	product_category VARCHAR(75) PRIMARY KEY,
+	product_category_english VARCHAR(75)
+);
+
+\copy category_names_english FROM 'C:\Users\guyil\Desktop\data_analysis\data_csv\product_category_name_translation.csv' WITH (FORMAT CSV, HEADER true, DELIMITER ',', ENCODING 'UTF8');
+
+INSERT INTO category_names_english (product_category)
+VALUES ('pc_gamer');
+
+INSERT INTO category_names_english (product_category)
+VALUES ('portateis_cozinha_e_preparadores_de_alimentos');
+
+ALTER TABLE products
+ADD CONSTRAINT fk_products_categories
+FOREIGN KEY (product_category)
+REFERENCES category_names_english(product_category);
+
+CREATE TABLE geolocation(
+	zip_code_prefix INTEGER,
+	latitude NUMERIC(8, 6),
+	longtitude NUMERIC(8, 6),
+	city VARCHAR(100),
+	state CHAR(2)
+);
+
+ALTER TABLE geolocation
+ALTER COLUMN latitude TYPE DOUBLE PRECISION,
+ALTER COLUMN longtitude TYPE DOUBLE PRECISION;
+
+
+\copy geolocation FROM 'C:\Users\guyil\Desktop\data_analysis\data_csv\olist_geolocation_dataset.csv' WITH (FORMAT CSV, HEADER true, DELIMITER ',', ENCODING 'UTF8');
+
+CREATE INDEX idx_orders_customer_id
+ON orders (customer_id);
+
+CREATE INDEX idx_customers_customer_unique_id
+ON customers (customer_unique_id);
+
+SELECT EXISTS (
+    SELECT 1
+    FROM orders o
+    JOIN customers c
+      ON o.customer_id = c.customer_unique_id
+);
